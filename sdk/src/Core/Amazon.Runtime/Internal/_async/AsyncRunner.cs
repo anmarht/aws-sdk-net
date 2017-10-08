@@ -40,44 +40,23 @@ namespace Amazon.Runtime.Internal
                 Exception exception = null;
                 T result = default(T);
 
-                using (var semaphore = new SemaphoreSlim(0))
+                try
                 {
-                    Thread thread = new Thread(() =>
-                    {
-                        try
-                        {
-                            result = action();
-                        }
-                        catch (Exception e)
-                        {
-                            exception = e;
-                        }
-                        finally
-                        {
-                            semaphore.Release();
-                        }
-                    });
-#if !CORECLR
-                using (var ctr = cancellationToken.Register(() =>
-                {
-                    if (thread.IsAlive)
-                        thread.Abort();
-                }))
-#endif
-                    {
-                        thread.Start();
-                        await semaphore.WaitAsync();
-                        thread.Join();
-
-                        if (exception != null)
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
-                        }
-
-                        return result;
-                    }
+                    result = action();
                 }
+                catch (Exception e)
+                {
+                    exception = e;
+                }
+
+                if (exception != null)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
+                }
+
+                return await Task.FromResult(result);
+
             }, cancellationToken);
 #endif
         }

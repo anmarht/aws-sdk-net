@@ -35,7 +35,7 @@ namespace Amazon.Runtime.Internal
             Task<T> task = Task.Run<T>(action);
             return task;
 #else
-            return Task<T>.Run(async () =>
+            return Task<T>.Run(() =>
             {
                 Exception exception = null;
                 T result = default(T);
@@ -55,7 +55,7 @@ namespace Amazon.Runtime.Internal
                     System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
                 }
 
-                return await Task.FromResult(result);
+                return result;
 
             }, cancellationToken);
 #endif
